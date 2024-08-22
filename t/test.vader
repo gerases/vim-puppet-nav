@@ -1,0 +1,17 @@
+Execute (Test ExtractTypeName()):
+  for line in [
+        \ "class some::entity () {",
+        \ "define some::entity () {",
+        \ "class some::entity {",
+        \ "define some::entity {",
+        \ " class { 'some::entity':",
+        \ " some::entity { 'instance': }",
+        \ " some::entity { 'instance':",
+        \ " include some::entity",
+        \ " include    some::entity   ",
+        \ " contain some::entity",
+        \ " contain      some::entity    ",
+        \]
+    let class_name = ExtractTypeName(line)
+    AssertEqual 'some::entity', class_name
+  endfor
