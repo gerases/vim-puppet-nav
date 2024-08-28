@@ -4,6 +4,55 @@ function! Debug(message)
   endif
 endfunction
 
+function! s:Ensure_Proj_Dir()
+  let l:current_dir = getcwd()
+  if stridx(l:current_dir, expand('~/proj/puppet')) == -1
+    echo "Not in the proj puppet directory"
+    return 0
+  endif
+  return 1
+endfunction
+
+function! Select_Items_Fzf()
+  if s:Ensure_Proj_Dir() == 0
+    return
+  endif
+
+  let l:allowed_ftypes = ["puppet", "ruby"]
+  if index(l:allowed_ftypes, &filetype) == -1
+    echo "Not a puppet or spec file"
+    return
+  end
+
+  let items = CollectMatches()
+  if len(items) == 0
+    echo "Nothing found"
+    return
+  end
+
+  let options = {
+      \ 'options': ['--prompt', 'Resource> '],
+      \ 'source': items,
+      \ 'window' : { 'height': '20%', 'width': 40 },
+      \ 'sink': function('Fzf_Sink'),
+      \ }
+  call fzf#run(fzf#wrap(options))
+endfunction
+
+function! CollectMatches()
+    let matches = []
+    " Loop over all lines in the buffer
+    for line_num in range(1, line('$'))
+        let line = getline(line_num)
+        let l:match = ExtractTypeName(line)
+        if l:match == ''
+          continue
+        endif
+        call add(matches, l:match)
+    endfor
+    return sort(uniq(matches))
+endfunction
+
 function! ExtractTypeName(line)
   " Return either the name of a class or the name of a defined type
 
@@ -13,34 +62,56 @@ function! ExtractTypeName(line)
  " 2. e.g. class { 'some::class': }.
  " 3. e.g. some::define { 'instance': }.
  " 4. an include/contain statement
+ " 5. a describe statement in a spec file
 
-  let l:current_dir = getcwd()
-  if stridx(l:current_dir, expand('~/proj/puppet')) == -1
-    echo "Not in the proj puppet directory"
-    return ''
+  if s:Ensure_Proj_Dir() == 0
+    return
   endif
 
   let l:patterns = [
         \ '^\(class\|define\)\s\+\zs[^ ({]\+',
         \ '^[^#]\s*class\s*{\s*[''"]\zs[^''"]\+\ze',
         \ '^[^#]\s*\zs[a-zA-Z0-9_:]\+\ze\s*{\s*.*:',
-        \ '\(include\|contain\)\s\+\zs\S\+',
+        \ '^[^#]\s*\(include\|contain\)\s\+\zs[a-zA-Z0-9]\+',
+        \ '^describe\s*[''"]\zs[^''"]\+\ze',
         \ ]
+
+  let l:ignore = [
+        \ 'exec',
+        \ 'file',
+        \ 'group',
+        \ 'it',
+        \ 'notify',
+        \ 'package',
+        \ 'schedule',
+        \ 'service',
+        \ 'tidy',
+        \ 'user',
+        \]
 
   " Find the first matching pattern
   for l:pattern in l:patterns
     let l:match = matchstr(a:line, l:pattern)
     if l:match != ''
+      let l:match = substitute(l:match, "^::", "", "")
+      " Ignore built in resources
+      if index(l:ignore, l:match) != -1
+        call Debug("Ignoring '".l:match)
+        return
+      end
       call Debug("Matched '".l:match. "' with pattern: '".l:pattern."'")
       return l:match
     endif
   endfor
-  echo "Couldn't find a class or defined type on the current line."
   return ''
 endfunction
 
 function! SearchPuppetCode(line)
   let l:type_name = ExtractTypeName(a:line)
+  if l:type_name == ''
+    echo "Couldn't find a class or defined type on the current line."
+  endif
+
   call Debug("The type name is:[start]".l:type_name."[end]")
   if l:type_name == ''
     return ''
@@ -57,6 +128,8 @@ function! SearchPuppetCode(line)
   "   Ex: some::define { '
   " 4. Class include
   "   Ex: include some::class
+  " 5. Class include
+  "   Ex: describe statement
 
   " NOTE: The pattern should be in the language of ripgrep not vim!
   let l:patterns = []
@@ -64,14 +137,26 @@ function! SearchPuppetCode(line)
   call add(l:patterns, '^[^#]\s+class\s*\{\s*(["''])'.type_name.'\1')
   call add(l:patterns, '^[^#]\s+'.type_name.'\s*\{\s*.*:')
   call add(l:patterns, '(include|contain)\s+'.type_name.'[^:]')
+  call add(l:patterns, '^describe\s*(["''])'.type_name.'\2')
   let l:pattern = '(?:' . join(l:patterns, '|') . ')'
   call Debug("The pattern is:".l:pattern)
   call RgPuppet(l:pattern, ["-g'!".expand('%')."'"])
 endfunction
 
-function! GoToPuppetManifest(line)
-  let l:type_name = ExtractTypeName(a:line)
+function! Fzf_Sink(line)
+  call GoToPuppetManifest(a:line, 0)
+endfunction
+
+function! GoToPuppetManifest(line, extract=1)
+  if a:extract == 0
+    " Meaning 'line' contains the extracted resource name already
+    let l:type_name = a:line
+  else
+    let l:type_name = ExtractTypeName(a:line)
+  end
+
   if l:type_name == ''
+    echo "Coudn't extract resource name"
     return ''
   endif
 
