@@ -1,4 +1,4 @@
-Execute (Test ExtractTypeName()):
+Execute (Ensure some::entity is found in each case):
   for line in [
         \ "class some::entity () {",
         \ "define some::entity () {",
@@ -15,3 +15,7 @@ Execute (Test ExtractTypeName()):
     let class_name = ExtractTypeName(line)
     AssertEqual 'some::entity', class_name
   endfor
+
+Execute (Ensure the wrong cases are not picked up):
+    let class_name = ExtractTypeName("it 'includes ius' do")
+    AssertEqual '', class_name

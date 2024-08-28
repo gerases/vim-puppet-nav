@@ -6,6 +6,12 @@ endfunction
 
 function! s:Ensure_Proj_Dir()
   let l:current_dir = getcwd()
+
+  " If we're in the development directory, return True
+  if stridx(l:current_dir, expand('~/proj/vim-puppet-nav')) != -1
+    return 1
+  endif
+
   if stridx(l:current_dir, expand('~/proj/puppet')) == -1
     echo "Not in the proj puppet directory"
     return 0
