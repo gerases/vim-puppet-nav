@@ -72,7 +72,7 @@ function! ExtractTypeName(line)
         \ '^\(class\|define\)\s\+\zs[^ ({]\+',
         \ '^[^#]\s*class\s*{\s*[''"]\zs[^''"]\+\ze',
         \ '^[^#]\s*\zs[a-zA-Z0-9_:]\+\ze\s*{\s*.*:',
-        \ '^[^#]\s*\(include\|contain\)\s\+\zs[a-zA-Z0-9]\+',
+        \ '^[^#]\s*\(include\|contain\)\s\+\zs[a-zA-Z0-9_:]\+',
         \ '^describe\s*[''"]\zs[^''"]\+\ze',
         \ ]
 
