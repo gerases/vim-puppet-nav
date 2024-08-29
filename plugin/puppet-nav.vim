@@ -5,6 +5,7 @@ function! Debug(message)
 endfunction
 
 function! s:Ensure_Proj_Dir()
+  " Return 1 if the user is in or under ~/proj/puppet.
   let l:current_dir = getcwd()
   if stridx(l:current_dir, expand('~/proj/puppet')) == -1
     echo "Not in the proj puppet directory"
@@ -14,6 +15,9 @@ function! s:Ensure_Proj_Dir()
 endfunction
 
 function! Select_Items_Fzf()
+  " Call CollectMatches to find all resources in the manifest
+  " and present the user with an fzf window to select one of them, after
+  " which the corresponding manifest will be opened.
   if s:Ensure_Proj_Dir() == 0
     return
   endif
@@ -40,6 +44,7 @@ function! Select_Items_Fzf()
 endfunction
 
 function! CollectMatches()
+    " Scan the file and finds all resources (classes, defined types)
     let matches = []
     " Loop over all lines in the buffer
     for line_num in range(1, line('$'))
@@ -107,6 +112,10 @@ function! ExtractTypeName(line=getline('.'))
 endfunction
 
 function! SearchPuppetCode(line=getline('.'))
+  " Given a line of puppet code:
+  "   1. Extract the type
+  "   2. Look for a mention of that type all of the puppet code (.pp file)
+  "      excluding the file where the function was called
   let l:type_name = ExtractTypeName(a:line)
   if l:type_name == ''
     echo "Couldn't find a class or defined type on the current line."
@@ -144,6 +153,7 @@ function! SearchPuppetCode(line=getline('.'))
 endfunction
 
 function! Fzf_Sink(line)
+  " Open the manifest for a resource selected in Select_Items_Fzf()
   call GoToPuppetManifest(a:line, 0)
 endfunction
 
@@ -183,7 +193,7 @@ function! GoToPuppetManifest(line, extract=1)
 endfunction
 
 function! RgPuppet(pattern, additional_opts=[])
-  " Find instances of the class in the puppet code
+  " Given a pattern, find all its matches in all puppet manifests
   let l:cmd_list = [
         \ 'rg',
         \ '--pcre2',
