@@ -53,7 +53,7 @@ function! CollectMatches()
     return sort(uniq(matches))
 endfunction
 
-function! ExtractTypeName(line)
+function! ExtractTypeName(line=getline('.'))
   " Return either the name of a class or the name of a defined type
 
  " The rules below are:
@@ -106,7 +106,7 @@ function! ExtractTypeName(line)
   return ''
 endfunction
 
-function! SearchPuppetCode(line)
+function! SearchPuppetCode(line=getline('.'))
   let l:type_name = ExtractTypeName(a:line)
   if l:type_name == ''
     echo "Couldn't find a class or defined type on the current line."
