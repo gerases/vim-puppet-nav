@@ -206,3 +206,5 @@ function! RgPuppet(pattern, additional_opts=[])
   call Debug("cmd:[start]".l:cmd."[end]")
   call fzf#vim#grep(l:cmd, fzf#vim#with_preview())
 endfunction
+
+command! -nargs=1 Rgp call RgPuppet(<f-args>)
