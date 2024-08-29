@@ -176,7 +176,7 @@ function! GoToPuppetManifest(line, extract=1)
 
   " If the manifest is found, open it in a new tab
   if !empty(manifest_file)
-      execute 'tabedit' manifest_file
+      execute '-tabedit' manifest_file
   else
       echo "Manifest not found: " . manifest_path . ".pp"
   endif
