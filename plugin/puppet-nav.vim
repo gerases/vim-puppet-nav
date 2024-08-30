@@ -1,7 +1,27 @@
+if !exists('g:puppet_nav_proj_path')
+  let g:puppet_nav_proj_path = expand('~/proj/puppet')
+endif
+
 function! Debug(message)
   if exists('g:puppet_nav_debug') && g:puppet_nav_debug == 1
     echom "DEBUG:".a:message
   endif
+endfunction
+
+function! s:Call_With_Cd(func, ...)
+  let l:cur_dir = getcwd()
+  call s:chdir(g:puppet_nav_proj_path)
+  let l:result = call(a:func, a:000)
+  call s:chdir(l:cur_dir)
+  return l:result
+endfunction
+
+function! s:chdir(path)
+  try
+    exe 'lcd ' . a:path
+  catch
+    echoerr "An error occurred: " . v:exception
+  endtry
 endfunction
 
 function! s:EnsureProjDir()
@@ -18,9 +38,6 @@ function! SelectResourcesFzf()
   " Call CollectResources to find all resources in the manifest
   " and present the user with an fzf window to select one of them, after
   " which the corresponding manifest will be opened.
-  if s:EnsureProjDir() == 0
-    return
-  endif
 
   let l:allowed_ftypes = ["puppet", "ruby"]
   if index(l:allowed_ftypes, &filetype) == -1
@@ -227,7 +244,7 @@ function! GoToPuppetManifest(line=getline('.'), extract=1)
   endif
 
   " Add the ".pp" extension to form the manifest path
-  let manifest_file = findfile(manifest_path . '.pp', 'modules/;')
+  let manifest_file = s:Call_With_Cd('findfile', manifest_path . '.pp', 'modules/;')
 
   " If the manifest is found, open it in a new tab
   if !empty(manifest_file)
@@ -282,7 +299,7 @@ function! RgPuppet(pattern, additional_opts=[])
   " Join the list into a single command string
   let l:cmd = join(l:cmd_list, ' ')
   call Debug("cmd:[start]".l:cmd."[end]")
-  call fzf#vim#grep(l:cmd, fzf#vim#with_preview())
+  call s:Call_With_Cd('fzf#vim#grep', l:cmd, fzf#vim#with_preview())
 endfunction
 
 command! -nargs=1 Rgp call RgPuppet(<f-args>)
