@@ -4,7 +4,7 @@ function! Debug(message)
   endif
 endfunction
 
-function! s:Ensure_Proj_Dir()
+function! s:EnsureProjDir()
   " Return 1 if the user is in or under ~/proj/puppet.
   let l:current_dir = getcwd()
   if stridx(l:current_dir, expand('~/proj/puppet')) == -1
@@ -14,11 +14,11 @@ function! s:Ensure_Proj_Dir()
   return 1
 endfunction
 
-function! Select_Items_Fzf()
+function! SelectResourcesFzf()
   " Call CollectResources to find all resources in the manifest
   " and present the user with an fzf window to select one of them, after
   " which the corresponding manifest will be opened.
-  if s:Ensure_Proj_Dir() == 0
+  if s:EnsureProjDir() == 0
     return
   endif
 
@@ -38,7 +38,7 @@ function! Select_Items_Fzf()
       \ 'options': ['--prompt', 'Resource> '],
       \ 'source': resources,
       \ 'window' : { 'height': '20%', 'width': 40 },
-      \ 'sink': function('Fzf_Sink'),
+      \ 'sink': function('FzfSink'),
       \ }
   call fzf#run(fzf#wrap(options))
 endfunction
@@ -86,7 +86,7 @@ function! ExtractResource(line=getline('.'))
  " 4. an include/contain statement
  " 5. a describe statement in a spec file
 
-  if s:Ensure_Proj_Dir() == 0
+  if s:EnsureProjDir() == 0
     return
   endif
 
@@ -149,7 +149,7 @@ function! SearchPuppetCode(line=getline('.'))
   "   2. Look for a mention of that type all of the puppet code (.pp files)
   "      excluding the file where the function was called
 
-  if s:Ensure_Proj_Dir() == 0
+  if s:EnsureProjDir() == 0
     return
   endif
 
@@ -192,8 +192,8 @@ function! SearchPuppetCode(line=getline('.'))
   call RgPuppet(l:pattern, ["-g'!".expand('%')."'"])
 endfunction
 
-function! Fzf_Sink(line)
-  " Open the manifest for a resource selected in Select_Items_Fzf()
+function! FzfSink(line)
+  " Open the manifest for a resource selected in SelectResourcesFzf()
   call GoToPuppetManifest(a:line, 0)
 endfunction
 
@@ -238,7 +238,7 @@ endfunction
 function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
   " Given a resource, look up which hosts use it.
 
-  if s:Ensure_Proj_Dir() == 0
+  if s:EnsureProjDir() == 0
     return
   endif
 
