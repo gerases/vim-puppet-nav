@@ -197,7 +197,7 @@ function! FzfSink(line)
   call GoToPuppetManifest(a:line, 0)
 endfunction
 
-function! GoToPuppetManifest(line, extract=1)
+function! GoToPuppetManifest(line=getline('.'), extract=1)
   if a:extract == 0
     " Meaning 'line' contains the extracted resource name already
     let l:title = a:line
