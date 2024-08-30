@@ -1,21 +1,61 @@
+Before:
+  exe 'messages clear'
+  exe 'cd ' . expand('~/.vim/plugged/vim-puppet-nav')
+  exe 'source ' . expand('plugin/puppet-nav.vim')
+  exe 'cd ' . expand('~/proj/puppet')
+
 Execute (Ensure some::entity is found in each case):
-  for line in [
-        \ "class some::entity () {",
-        \ "define some::entity () {",
-        \ "class some::entity {",
-        \ "define some::entity {",
-        \ " class { 'some::entity':",
-        \ " some::entity { 'instance': }",
-        \ " some::entity { 'instance':",
-        \ " include some::entity",
-        \ " include    some::entity   ",
-        \ " contain some::entity",
-        \ " contain      some::entity    ",
+  for tst_case in [
+        \ [1 , "define some::type () {"],
+        \ [2 , "define some::type {"],
+        \ [3 , "class some::class {"],
+        \ [4 , "class some::class ($x=1) {"],
+        \ [5 , "define some::type {"],
+        \ [6 , " class { 'some::class':"],
+        \ [7 , " defined::type { 'instance': }"],
+        \ [8 , " defined::type { 'instance':"],
+        \ [9 , " include some::class"],
+        \ [10, " include    some::class   "],
+        \ [11, " contain some::class"],
+        \ [12, " contain      some::class    "],
         \]
-    let class_name = ExtractTypeName(line)
-    AssertEqual 'some::entity', class_name
+    let idx = tst_case[0]
+    let line = tst_case[1]
+    if stridx(line, 'defined') != -1
+      let type = 'defined::type'
+      let title = 'instance'
+    elseif stridx(line, 'define some') != -1
+      let type = 'defined_type'
+      let title = 'some::type'
+    else
+      let type = 'class'
+      let title = 'some::class'
+    endif
+    let resource = ExtractResource(line)
+    let resource['idx'] = idx
+    AssertEqual {'type': type, 'title': title, 'idx': idx}, resource
   endfor
 
 Execute (Ensure the wrong cases are not picked up):
-    let class_name = ExtractTypeName("it 'includes ius' do")
-    AssertEqual '', class_name
+  for tst_case in [
+        \ [1 , "it 'includes something' do"],
+        \ [2, "it 'define something' do"],
+        \]
+  endfor
+  let idx = tst_case[0]
+  let line = tst_case[1]
+  let resource = ExtractResource(line)
+  AssertEqual {}, resource
+
+Execute (Test GetSymbolicPath):
+  for tst_case in [
+        \ [1 , {'type': 'class', 'title': 'some::class'}, 'some::class'],
+        \ [2 , {'type': 'defined_type', 'title': 'some::type'}, 'some::type'],
+        \ [3 , {'type': 'defined_type_instance', 'title': 'some::type'}, 'defined_type_instance'],
+        \]
+  endfor
+  let idx = tst_case[0]
+  let resource = tst_case[1]
+  let expect = tst_case[2]
+  let result = __GetSymbolicPath(resource)
+  AssertEqual expect, result

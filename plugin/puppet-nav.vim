@@ -8,7 +8,7 @@ function! s:EnsureProjDir()
   " Return 1 if the user is in or under ~/proj/puppet.
   let l:current_dir = getcwd()
   if stridx(l:current_dir, expand('~/proj/puppet')) == -1
-    echo "Not in the proj puppet directory"
+    echo "Not in the proj/puppet directory"
     return 0
   endif
   return 1
@@ -43,15 +43,17 @@ function! SelectResourcesFzf()
   call fzf#run(fzf#wrap(options))
 endfunction
 
-function! s:GetSymbolicPath(resource)
+function! __GetSymbolicPath(resource)
   " Given resource record, which consists of the resource type and title,
-  " return the name of the class/include/contain/describe or the name of the
-  " defined type.
+  " return the name of the define/class/include/contain/describe _or_
+  " the name of a defined type instance.
 
-  if a:resource["defined_type"] == 1
-    return a:resource["type"]
-  else
+  if index(["class", "defined_type"], a:resource["type"]) != -1
+    " if this is the definition of a class or a defined type
     return a:resource["title"]
+  else
+    " if this is an _instance_ of the defined type
+    return a:resource["type"]
   endif
 endfunction
 
@@ -70,7 +72,7 @@ function! CollectResources()
         if l:resource == {}
           continue
         endif
-        call add(l:titles, s:GetSymbolicPath(resource))
+        call add(l:titles, __GetSymbolicPath(resource))
     endfor
     return sort(uniq(l:titles))
 endfunction
@@ -130,12 +132,12 @@ function! ExtractResource(line=getline('.'))
       end
       call Debug("Matched '" .l:resource_type. "' with pattern: '".l:pattern."'")
       let l:result = {'title': l:resource_instance}
-      if index(['class', 'include', 'contain', 'describe'], l:resource_type) == -1
-        let l:result['type'] = l:resource_type
-        let l:result['defined_type'] = 1
-      else
+      if index(['class', 'include', 'contain', 'describe'], l:resource_type) != -1
         let l:result['type'] = 'class'
-        let l:result['defined_type'] = 0
+      elseif l:resource_type == 'define'
+        let l:result['type'] = 'defined_type'
+      else
+        let l:result['type'] = l:resource_type
       endif
       return l:result
     endif
@@ -159,7 +161,7 @@ function! SearchPuppetCode(line=getline('.'))
     return
   endif
 
-  let l:type = s:GetSymbolicPath(resource)
+  let l:type = __GetSymbolicPath(resource)
 
   call Debug("The type name is:[start]".l:type."[end]")
   if l:type == ''
