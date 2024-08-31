@@ -308,6 +308,22 @@ function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
   endtry
 endfunction
 
+function! PuppetDbTypeTitleLookup(line=getline('.'))
+  " Query PuppetDB by using both the type and title of the resource.
+  " For example: Class+Mysql
+  call PuppetDbLookup(line, 1)
+endfunction
+
+function! PuppetDbTypeLookup(line=getline('.'))
+  " Query PuppetDB by using ONLY the type.
+  " For example: some::defined_type
+  "
+  " This is allowed only for defined types since other built in types such as
+  " 'class' would produce potentially hundreds of lines.
+  call PuppetDbLookup(line, 0)
+endfunction
+
+
 function! RgPuppet(pattern, additional_opts=[])
   " Given a pattern, find all its matches in all puppet manifests
   let l:cmd_list = [
