@@ -31,7 +31,8 @@ The following functions are exposed for the bindings of your choice:
 | ------------- | ------------- |
 | `GoToPuppetManifest()` | Go to the puppet manifest of the resource on the line |
 | `SelectResourcesFzf()` | Go to the puppet manifest of the resource selected via an FZF dialog |
-| `PuppetDbLookup()` | See [PuppetDB Integration](#puppetdb-integration).|
+| `PuppetDbTypeTitleLookup()` | See [PuppetDB Integration](#puppetdb-integration).|
+| `PuppetDbTypeLookup()` | See [PuppetDB Integration](#puppetdb-integration).|
 | `SearchPuppetCode()` | Search the puppet manifests for the resource on the current line and present the results in an FZF dialog. The result will exclude the current file. The idea is to search for the use of the resource in other manifests.|
 
 The following commands are defined:
@@ -42,15 +43,41 @@ The following commands are defined:
 
 # PuppetDB Integration
 
-In order for puppetdb lookups to work, you need to set the `g:puppetdb_host`
+If the PuppetDB aspect of the plugin is correctly configured, it becomes
+possible to see which puppet managed hosts utilize this or that resource.  In
+order for puppetdb lookups to work, you need to set the `g:puppetdb_host`
 variable to your server in this format: `http(s)://<DBHOST>:<DBPORT>`.
 
 Once the host is set, you can position the cursor on a line with a puppet
-resource and execute `:call PuppetDbLookup()`. You can of course create a key
-binding to that function like so:
+resource and execute `:call PuppetDbTypeTitleLookup()` or `:call
+PuppetDbTypeLookup()`. The output in a new tab will be a list of hosts using the
+resource on the current line.
+
+The difference between those two functions is that given the code below:
 
 ```
-:nnoremap <Leader>L :call PuppetDbLookup()<cr>
+some::defined::type { 'instance':; }
+```
+
+`PuppetDbTypeTitleLookup` will query PuppetDB using both the type (`some::defined::type`) and
+the title `instance`, while `PuppetDbTypeLookup` will use only the type.
+
+However given this code:
+
+```
+some::class { 'class-name':; }
+```
+
+both functions will work identically by using both the type (`class`) and the
+title (`class-name`). The reason why title is forcefully used in these cases is
+because querying just by the type could potentially produce hundreds of results
+and create unnecessary load on PuppetDB.
+
+Example key binding for the functions are below:
+
+```
+:nnoremap <Leader>L :call PuppetDbTypeTitleLookup()<cr>
+:nnoremap <Leader>l :call PuppetDbTypeLookup()<cr>
 ```
 
 **NOTE**: Internally, the plugin uses `curl` and`jq` to present the results of the
