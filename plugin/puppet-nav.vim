@@ -183,13 +183,15 @@ function! SearchPuppetCode(line=getline('.'))
   " 5. Class include
   "   Ex: describe statement
 
-  " NOTE: The pattern should be in the language of ripgrep not vim!
+  " NOTE: THE PATTERN SHOULD BE IN THE LANGUAGE OF RIPGREP NOT VIM!!!
+  " The weird looking (?:::)? is non-capturing parens to group the
+  " possible '::' preceding the type.
   let l:patterns = []
-  call add(l:patterns, '(?:^class|^define)\s+'.l:type.'[^:]')
-  call add(l:patterns, '^[^#]\s+class\s*\{\s*(["''])'.l:type.'\1')
-  call add(l:patterns, '^[^#]\s+'.l:type.'\s*\{\s*.*:')
-  call add(l:patterns, '(include|contain)\s+'.l:type.'[^:]')
-  call add(l:patterns, '^describe\s*(["''])'.l:type.'\2')
+  call add(l:patterns, '(?:^class|^define)\s+(?:::)?'.l:type.'[^:]')
+  call add(l:patterns, '^[^#]\s+class\s*\{\s*(["''])(?:::)?'.l:type.'\1')
+  call add(l:patterns, '^[^#]\s+(?:::)?'.l:type.'\s*\{\s*.*:')
+  call add(l:patterns, '(include|contain)\s+(?:::)?'.l:type.'[^:]')
+  call add(l:patterns, '^describe\s*(["''])(?:::)?'.l:type.'\2')
   let l:pattern = '(?:' . join(l:patterns, '|') . ')'
   call Debug("The pattern is:".l:pattern)
   call s:Call_With_Cd('RgPuppet', l:pattern, ["-g'!".expand('%')."'"])
