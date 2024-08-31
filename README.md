@@ -25,6 +25,8 @@ In addition, the original `Rg` command from the [fzf.vim](https://github.com/jun
 Install using [vim-plug](https://github.com/junegunn/vim-plug) or another vim plugin system. If you don't have a plugin system, put the file in a location that is sourced by Vim such as `~/.vim/plugin`.
 
 # Use
+To take full advantage of the plugin, one must set the `g:puppet_nav_proj_path` variable to the root of the puppet code base.
+
 The following functions are exposed for the bindings of your choice:
 
 | Function | Purpose |
