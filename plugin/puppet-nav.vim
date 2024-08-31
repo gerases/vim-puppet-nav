@@ -300,7 +300,7 @@ function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
   call Debug("full cmd: " . l:full_cmd)
 
   try
-    exe "-tabnew " . "puppetdb::" . l:tab_title
+    silent! exe "-tabnew " . "puppetdb::" . l:tab_title
     exe "r! " l:full_cmd
     exe 'setlocal nomodifiable'
   catch
