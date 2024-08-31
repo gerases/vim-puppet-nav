@@ -1,7 +1,3 @@
-if !exists('g:puppet_nav_proj_path')
-  let g:puppet_nav_proj_path = expand('~/proj/puppet')
-endif
-
 function ShellEscape(str)
   return system('printf %q ' . a:str)
 endfunction
@@ -13,6 +9,10 @@ function! Debug(message)
 endfunction
 
 function! s:Call_With_Cd(func, ...)
+  if !exists('g:puppet_nav_proj_path')
+    throw "The g:puppet_nav_proj_path variable is not set. See https://github.com/gerases/vim-puppet-nav?tab=readme-ov-file#use"
+  endif
+
   let l:cur_dir = getcwd()
   call s:chdir(g:puppet_nav_proj_path)
   let l:result = call(a:func, a:000)
