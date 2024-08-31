@@ -78,7 +78,6 @@ function! CollectResources()
     for line_num in range(1, line('$'))
         let line = getline(line_num)
         let l:resource = ExtractResource(line)
-        " echo "The match is: " . string(l:resource)
         if l:resource == {}
           continue
         endif
