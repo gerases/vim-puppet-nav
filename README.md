@@ -1,5 +1,5 @@
 # vim-puppet-nav
-A vim plugin for navigating puppet code. It grew out of this two mappings suggested by [TheLocehiliosan](https://github.com/TheLocehiliosan):
+A vim plugin for navigating puppet code. It grew out of this two mappings suggested by [Tim Byrne](https://github.com/TheLocehiliosan):
 
 ```
 vnoremap <leader>F "vy:let @v=substitute(@v,'^::','','') \| exec 'Rg '.getreg("v")<cr>
@@ -31,6 +31,7 @@ The following functions are exposed for the bindings of your choice:
 | ------------- | ------------- |
 | `GoToPuppetManifest()` | Go to the puppet manifest of the resource on the line |
 | `SelectResourcesFzf()` | Go to the puppet manifest of the resource selected via an FZF dialog |
+| `PuppetDbLookup()` | See [PuppetDB Integration](#puppetdb-integration).|
 | `SearchPuppetCode()` | Search the puppet manifests for the resource on the current line and present the results in an FZF dialog. The result will exclude the current file. The idea is to search for the use of the resource in other manifests.|
 
 The following commands are defined:
@@ -41,32 +42,27 @@ The following commands are defined:
 
 # PuppetDB Integration
 
-The plugin exposes one more function called `PuppetDbLookup()` that will search
-PuppetDB for the hosts that use the resource on the current line. Two
-pre-requisites need to be satisfied for this to work:
+In order for puppetdb lookups to work, you need to set the `g:puppetdb_host`
+variable to your server in this format: `http(s)://<DBHOST>:<DBPORT>`.
 
-1. PuppetDB is set up and operational.
-2. A script called `puppet-resource` is available. The name of the script is
-currently hard-coded into the plugin. The script has an `-r` option to specify
-the resource type and title. For example:
+Once the host is set, you can position the cursor on a line with a puppet
+resource and execute `:call PuppetDbLookup()`. You can of course create a key
+binding to that function like so:
 
-```bash
-# Search for a class named "some_title"
-/usr/bin/puppet-resource -r Class%some_title
-
-# Search for a defined type named "some::type" and an instance name of
-"instance"
-/usr/bin/puppet-resource -r some::type%instance
+```
+:nnoremap <Leader>L :call PuppetDbLookup()<cr>
 ```
 
-NOTE: I'm not currently providing an implementation of that script for now, but that's something I'm willing to do provided there's interest.
+**NOTE**: Internally, the plugin uses `curl` and`jq` to present the results of the
+query. So they should be present on the system.
 
 # Dependencies
 * [fzf](https://github.com/junegunn/fzf)
 * [fzf.vim](https://github.com/junegunn/fzf.vim)
 * [Ripgrep](https://github.com/BurntSushi/ripgrep)
 * Vim >= 8.1 (because of the "terminal" capability in vim >= 8.1)
+* The following Linux utils: `curl`, `jq`, `column`.
 
 # Acknowledgements
-* [TheLocehiliosan](https://github.com/TheLocehiliosan) for the initial idea and all the suggestions.
+* [Tim Byrne](https://github.com/TheLocehiliosan) for the initial idea and all the suggestions.
 * [Junegunn Choi](https://github.com/junegunn) for the fzf suite of tools. Amazing stuff.

@@ -2,9 +2,13 @@ if !exists('g:puppet_nav_proj_path')
   let g:puppet_nav_proj_path = expand('~/proj/puppet')
 endif
 
+function ShellEscape(str)
+  return system('printf %q ' . a:str)
+endfunction
+
 function! Debug(message)
   if exists('g:puppet_nav_debug') && g:puppet_nav_debug == 1
-    echom "DEBUG:".a:message
+    echom "Debug:".a:message
   endif
 endfunction
 
@@ -22,16 +26,6 @@ function! s:chdir(path)
   catch
     echoerr "An error occurred: " . v:exception
   endtry
-endfunction
-
-function! s:EnsureProjDir()
-  " Return 1 if the user is in or under ~/proj/puppet.
-  let l:current_dir = getcwd()
-  if stridx(l:current_dir, expand('~/proj/puppet')) == -1
-    echo "Not in the proj/puppet directory"
-    return 0
-  endif
-  return 1
 endfunction
 
 function! SelectResourcesFzf()
@@ -60,17 +54,16 @@ function! SelectResourcesFzf()
   call fzf#run(fzf#wrap(options))
 endfunction
 
-function! __GetSymbolicPath(resource)
+function! GetResourceTitle(resource)
   " Given resource record, which consists of the resource type and title,
   " return the name of the define/class/include/contain/describe _or_
   " the name of a defined type instance.
-
-  if index(["class", "defined_type"], a:resource["type"]) != -1
-    " if this is the definition of a class or a defined type
-    return a:resource["title"]
-  else
+  if IsDefinedTypeInstance(a:resource)
     " if this is an _instance_ of the defined type
     return a:resource["type"]
+  else
+    " if this is the definition of a class or a defined type
+    return a:resource["title"]
   endif
 endfunction
 
@@ -89,7 +82,7 @@ function! CollectResources()
         if l:resource == {}
           continue
         endif
-        call add(l:titles, __GetSymbolicPath(resource))
+        call add(l:titles, GetResourceTitle(resource))
     endfor
     return sort(uniq(l:titles))
 endfunction
@@ -104,10 +97,6 @@ function! ExtractResource(line=getline('.'))
  " 3. e.g. some::define { 'instance': }.
  " 4. an include/contain statement
  " 5. a describe statement in a spec file
-
-  if s:EnsureProjDir() == 0
-    return
-  endif
 
   let l:patterns = [
         \ '^\(class\|define\)\s\+\zs[^ ({]\+',
@@ -168,17 +157,13 @@ function! SearchPuppetCode(line=getline('.'))
   "   2. Look for a mention of that type all of the puppet code (.pp files)
   "      excluding the file where the function was called
 
-  if s:EnsureProjDir() == 0
-    return
-  endif
-
   let l:resource = ExtractResource(a:line)
   if empty(l:resource)
     echo "Couldn't find a class or defined type on the current line."
     return
   endif
 
-  let l:type = __GetSymbolicPath(resource)
+  let l:type = GetResourceTitle(resource)
 
   call Debug("The type name is:[start]".l:type."[end]")
   if l:type == ''
@@ -208,7 +193,7 @@ function! SearchPuppetCode(line=getline('.'))
   call add(l:patterns, '^describe\s*(["''])'.type.'\2')
   let l:pattern = '(?:' . join(l:patterns, '|') . ')'
   call Debug("The pattern is:".l:pattern)
-  call RgPuppet(l:pattern, ["-g'!".expand('%')."'"])
+  call s:Call_With_Cd('RgPuppet', l:pattern, ["-g'!".expand('%')."'"])
 endfunction
 
 function! FzfSink(line)
@@ -254,11 +239,44 @@ function! GoToPuppetManifest(line=getline('.'), extract=1)
   endif
 endfunction
 
+function! SentenceCase(str, sep='::')
+  return join(map(split(a:str, a:sep), 'substitute(v:val, "^.", "\\u&", "")'), a:sep)
+endfunction
+
+function! IsDefinedTypeInstance(resource)
+  if index(["class", "defined_type"], a:resource["type"]) != -1
+    return 0
+  endif
+  return 1
+endfunction
+
+function! MakePuppetDbQuery(resource, fully_qualify)
+  let l:res_type = SentenceCase(a:resource["type"])
+  if IsDefinedTypeInstance(a:resource)
+    " Don't capitalize the title of an instance of a defined type. It's stored
+    " in the db as is.
+    let l:res_title = a:resource["title"]
+  else
+    let l:res_title = SentenceCase(a:resource["title"])
+  endif
+  let l:query = 'type="'. ShellEscape(l:res_type) . '"'
+  let l:tab_title = l:res_type
+  if a:resource['type'] == 'class' || a:fully_qualify == 1
+    " Always fully qualify classes with their titles or the output will
+    " potentially contain hundreds of lines.
+    let l:query = l:query . ' and title="' . ShellEscape(l:res_title) . '"'
+    let l:tab_title = l:tab_title.'::'.l:res_title
+  endif
+  let l:tab_title = l:tab_title . '@' . system('date +%s')
+  let l:query = 'resources[certname,type,title] {' . l:query . '}'
+  call Debug("PuppetDB query: " . l:query)
+  return [l:query, l:tab_title]
+endfunction
+
 function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
   " Given a resource, look up which hosts use it.
-
-  if s:EnsureProjDir() == 0
-    return
+  if empty(g:puppetdb_host)
+    throw "g:puppetdb_host is not set! Please set to http(s)://<HOST>:<PORT>"
   endif
 
   let l:resource = ExtractResource(a:line)
@@ -267,14 +285,27 @@ function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
     return
   endif
 
-  let l:cmd = []
-  call add(l:cmd, '-tab terminal puppet-resource -v -r ' . resource['type'])
-  if l:resource['type'] == 'class' || a:fully_qualify == 1
-    " Always fully qualify classes with their titles
-    call add(l:cmd, '\%' . resource['title'])
-  endif
+  let l:baseurl = g:puppetdb_host.'/pdb/query/v4'
+  let l:query_info = MakePuppetDbQuery(resource, a:fully_qualify)
+  let l:query = l:query_info[0]
+  let l:tab_title = l:query_info[1]
 
-  exe join(l:cmd, '')
+  let l:curl_cmd = 'curl -s -k -X GET ' . l:baseurl . ' --data-urlencode ''query=' . l:query . ''''
+  call Debug("curl cmd: " . l:curl_cmd)
+
+  let l:jq_cmd = "jq -r '.[] | .certname + \" \" + .type + \" \" + .title'"
+  call Debug("jq cmd: " . l:jq_cmd)
+
+  let l:full_cmd = join([l:curl_cmd, l:jq_cmd, 'column -t'], '|')
+  call Debug("full cmd: " . l:full_cmd)
+
+  try
+    exe "-tabnew " . "puppetdb::" . l:tab_title
+    exe "r! " l:full_cmd
+    exe 'setlocal nomodifiable'
+  catch
+    echoerr "An error occurred: " . v:exception
+  endtry
 endfunction
 
 function! RgPuppet(pattern, additional_opts=[])

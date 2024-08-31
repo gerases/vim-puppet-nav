@@ -47,7 +47,7 @@ Execute (Ensure the wrong cases are not picked up):
   let resource = ExtractResource(line)
   AssertEqual {}, resource
 
-Execute (Test GetSymbolicPath):
+Execute (Test GetResourceTitle):
   for tst_case in [
         \ [1 , {'type': 'class', 'title': 'some::class'}, 'some::class'],
         \ [2 , {'type': 'defined_type', 'title': 'some::type'}, 'some::type'],
@@ -57,5 +57,18 @@ Execute (Test GetSymbolicPath):
   let idx = tst_case[0]
   let resource = tst_case[1]
   let expect = tst_case[2]
-  let result = __GetSymbolicPath(resource)
+  let result = GetResourceTitle(resource)
+  AssertEqual expect, result
+
+Execute (Test IsDefinedTypeInstance):
+  for tst_case in [
+        \ [1 , {'type': 'class', 'title': 'some::class'}, 0],
+        \ [2 , {'type': 'defined_type', 'title': 'some::type'}, 0],
+        \ [3 , {'type': 'defined_type_instance', 'title': 'some::type'}, 1],
+        \]
+  endfor
+  let idx = tst_case[0]
+  let resource = tst_case[1]
+  let expect = tst_case[2]
+  let result = IsDefinedTypeInstance(resource)
   AssertEqual expect, result
