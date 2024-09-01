@@ -321,7 +321,7 @@ function! RgPuppet(pattern, additional_opts=[])
 
   " Append additional options if provided
   if !empty(a:additional_opts)
-    let l:cmd_list += a:additional_opts
+    call add(l:cmd_list, a:additional_opts)
   endif
 
   " Join the list into a single command string
