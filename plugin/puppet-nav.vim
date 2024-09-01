@@ -251,29 +251,6 @@ function! IsDefinedTypeInstance(resource)
   return 1
 endfunction
 
-function! MakePuppetDbQuery(resource, fully_qualify)
-  let l:res_type = SentenceCase(a:resource["type"])
-  if IsDefinedTypeInstance(a:resource)
-    " Don't capitalize the title of an instance of a defined type. It's stored
-    " in the db as is.
-    let l:res_title = a:resource["title"]
-  else
-    let l:res_title = SentenceCase(a:resource["title"])
-  endif
-  let l:query = 'type="'. ShellEscape(l:res_type) . '"'
-  let l:tab_title = l:res_type
-  if a:resource['type'] == 'class' || a:fully_qualify == 1
-    " Always fully qualify classes with their titles or the output will
-    " potentially contain hundreds of lines.
-    let l:query = l:query . ' and title="' . ShellEscape(l:res_title) . '"'
-    let l:tab_title = l:tab_title.'::'.l:res_title
-  endif
-  let l:tab_title = l:tab_title . '@' . system('date +%s')
-  let l:query = 'resources[certname,type,title] {' . l:query . '}'
-  call Debug("PuppetDB query: " . l:query)
-  return [l:query, l:tab_title]
-endfunction
-
 function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
   " Given a resource, look up which hosts use it.
   if empty(g:puppetdb_host)
@@ -286,24 +263,27 @@ function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
     return
   endif
 
-  let l:baseurl = g:puppetdb_host.'/pdb/query/v4'
-  let l:query_info = MakePuppetDbQuery(resource, a:fully_qualify)
-  let l:query = l:query_info[0]
-  let l:tab_title = l:query_info[1]
+  let l:res_type = SentenceCase(l:resource["type"])
+  if IsDefinedTypeInstance(l:resource)
+    " Don't capitalize the title of an instance of a defined type. It's stored
+    " in the db as is.
+    let l:res_title = resource["title"]
+  else
+    let l:res_title = SentenceCase(resource["title"])
+  endif
 
-  let l:curl_cmd = 'curl -s -k -X GET ' . l:baseurl . ' --data-urlencode ''query=' . l:query . ''''
-  call Debug("curl cmd: " . l:curl_cmd)
-
-  let l:jq_cmd = "jq -r '.[] | .certname + \" \" + .type + \" \" + .title'"
-  call Debug("jq cmd: " . l:jq_cmd)
-
-  let l:full_cmd = join([l:curl_cmd, l:jq_cmd, 'column -t'], '|')
-  call Debug("full cmd: " . l:full_cmd)
+  if resource['type'] == 'class' || a:fully_qualify == 1
+    " Always fully qualify classes with their titles or the output will
+    " potentially contain hundreds of lines.
+    let l:script_args = join([res_type, l:res_title], ' ')
+  else
+    let l:script_args = res_type
+  endif
 
   try
-    silent! exe "-tabnew " . "puppetdb::" . l:tab_title
-    exe "r! " l:full_cmd
-    exe 'setlocal nomodifiable'
+    let l:script = printf('%s/plugin/puppetdb.sh', expand('<sfile>:p:h'))
+    call Debug(printf("Executing: %s %s %s",  l:script, g:puppetdb_host, l:script_args))
+    exe printf("-tab term %s %s %s", l:script, g:puppetdb_host, l:script_args)
   catch
     echoerr "An error occurred: " . v:exception
   endtry
