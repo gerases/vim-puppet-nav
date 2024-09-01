@@ -4,7 +4,7 @@ endfunction
 
 function! Debug(message)
   if exists('g:puppet_nav_debug') && g:puppet_nav_debug == 1
-    echom "Debug:".a:message
+    echom printf("Debug: %s", a:message)
   endif
 endfunction
 
@@ -22,9 +22,9 @@ endfunction
 
 function! s:chdir(path)
   try
-    exe 'lcd ' . a:path
+    exe printf('lcd %s', a:path)
   catch
-    echoerr "An error occurred: " . v:exception
+    echoerr printf("An error occurred: %s", v:exception)
   endtry
 endfunction
 
@@ -135,7 +135,7 @@ function! ExtractResource(line=getline('.'))
         call Debug("Ignoring '".l:resource_type)
         continue
       end
-      call Debug("Matched '" .l:resource_type. "' with pattern: '".l:pattern."'")
+      call Debug(printf("Matched %s with pattern %s", l:resource_type, l:pattern))
       let l:result = {'title': l:resource_instance}
       if index(['class', 'include', 'contain', 'describe'], l:resource_type) != -1
         let l:result['type'] = 'class'
@@ -164,7 +164,7 @@ function! SearchPuppetCode(line=getline('.'))
 
   let l:type = GetResourceTitle(resource)
 
-  call Debug("The type name is:[start]".l:type."[end]")
+  call Debug(printf("The type name is:[start]%s[end]", l:type))
   if l:type == ''
     return
   endif
@@ -193,8 +193,8 @@ function! SearchPuppetCode(line=getline('.'))
   call add(l:patterns, '(include|contain)\s+(?:::)?'.l:type.'[^:]')
   call add(l:patterns, '^describe\s*(["''])(?:::)?'.l:type.'\2')
   let l:pattern = '(?:' . join(l:patterns, '|') . ')'
-  call Debug("The pattern is:".l:pattern)
-  call s:Call_With_Cd('RgPuppet', l:pattern, ["-g'!".expand('%')."'"])
+  call Debug(printf("The pattern is: %s", l:pattern))
+  call s:Call_With_Cd('RgPuppet', l:pattern, [printf("-g'!%s'", expand('%'))])
 endfunction
 
 function! FzfSink(line)
@@ -234,9 +234,9 @@ function! GoToPuppetManifest(line=getline('.'), extract=1)
 
   " If the manifest is found, open it in a new tab
   if !empty(manifest_file)
-      call s:Call_With_Cd('execute', '-tabedit ' . manifest_file)
+      call s:Call_With_Cd('execute', printf('-tabedit %s', manifest_file))
   else
-      echo "Manifest not found: " . manifest_path . ".pp"
+      echo printf("Manifest not found: %s.pp", manifest_path)
   endif
 endfunction
 
