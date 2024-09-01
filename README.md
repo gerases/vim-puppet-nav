@@ -100,7 +100,7 @@ query. So they should be present on the system.
 * [fzf.vim](https://github.com/junegunn/fzf.vim)
 * [Ripgrep](https://github.com/BurntSushi/ripgrep)
 * Vim >= 8.1 (because of the "terminal" capability in vim >= 8.1)
-* The following Linux utils: `curl`, `jq`, `column`.
+* The following Linux utils to query puppetdb and process the responses: `curl`, `jq`, `column`.
 
 # Acknowledgements
 * [Tim Byrne](https://github.com/TheLocehiliosan) for the initial idea and all the suggestions.
