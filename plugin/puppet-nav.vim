@@ -292,7 +292,7 @@ endfunction
 function! PuppetDbTypeTitleLookup(line=getline('.'))
   " Query PuppetDB by using both the type and title of the resource.
   " For example: Class+Mysql
-  call PuppetDbLookup(line, 1)
+  call PuppetDbLookup(a:line, 1)
 endfunction
 
 function! PuppetDbTypeLookup(line=getline('.'))
@@ -301,7 +301,7 @@ function! PuppetDbTypeLookup(line=getline('.'))
   "
   " This is allowed only for defined types since other built in types such as
   " 'class' would produce potentially hundreds of lines.
-  call PuppetDbLookup(line, 0)
+  call PuppetDbLookup(a:line, 0)
 endfunction
 
 
