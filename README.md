@@ -55,15 +55,15 @@ The following commands are defined:
 
 # PuppetDB Integration
 
-If the PuppetDB aspect of the plugin is correctly configured, it becomes
-possible to see which puppet managed hosts utilize this or that resource.  In
-order for puppetdb lookups to work, you need to set the `g:puppetdb_host`
-variable to your server in this format: `http(s)://<DBHOST>:<DBPORT>`.
+If the PuppetDB component of the plugin is configured, it becomes possible to
+see which puppet managed hosts utilize this or that puppet resource.  In order for
+puppetdb lookups to work, you need to set the `g:puppetdb_host` variable to your
+server in this format: `http(s)://<DBHOST>:<DBPORT>`.
 
 Once the host is set, you can position the cursor on a line with a puppet
 resource and execute `:call PuppetDbTypeTitleLookup()` or `:call
-PuppetDbTypeLookup()`. The output in a new tab will be a list of hosts using the
-resource on the current line.
+PuppetDbTypeLookup()`. The output in a new tab will be a list of hosts using
+that resource.
 
 The difference between those two functions is that given the code below:
 
