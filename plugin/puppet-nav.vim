@@ -1,3 +1,5 @@
+let g:plugin_dir = expand('<sfile>:p:h')
+
 function ShellEscape(str)
   return system('printf %q ' . a:str)
 endfunction
@@ -281,7 +283,7 @@ function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
   endif
 
   try
-    let l:script = printf('%s/plugin/puppetdb.sh', expand('<sfile>:p:h'))
+    let l:script = printf('%s/puppetdb.sh', g:plugin_dir)
     call Debug(printf("Executing: %s %s %s",  l:script, g:puppetdb_host, l:script_args))
     exe printf("-tab term %s %s %s", l:script, g:puppetdb_host, l:script_args)
   catch
