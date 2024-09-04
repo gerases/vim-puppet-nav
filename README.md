@@ -1,5 +1,5 @@
 # vim-puppet-nav
-~
+
 This plugin, like [vim-rspec-puppet](https://github.com/gerases/vim-rspec-puppet),
 assumes your puppet code is organized similar to the below and is rooted at the value of
 `g:puppet_nav_proj_path` (must be set):
