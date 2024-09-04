@@ -1,18 +1,25 @@
 # vim-puppet-nav
-A vim plugin for navigating puppet code. It grew out of this two mappings suggested by [Tim Byrne](https://github.com/TheLocehiliosan):
+~
+This plugin, like [vim-rspec-puppet](https://github.com/gerases/vim-rspec-puppet),
+assumes your puppet code is organized similar to the below and is rooted at the value of
+`g:puppet_nav_proj_path` (must be set):
 
 ```
-vnoremap <leader>F "vy:let @v=substitute(@v,'^::','','') \| exec 'Rg '.getreg("v")<cr>
-nnoremap <leader>F "vy$:let @v=substitute(@v,'^::','','') \| exec 'Rg '.getreg("v")<cr>
+.
+├── manifests
+├── modules
+│   ├── some-forge-module
+│   ├── your-custom-mod
+...
 ```
 
-Those two mappings are a quick solution to search one's puppet code base for the name of the class pointed to by the cursor, provided the cursor is positioned on the first letter of the class. For example in the code below, the cursor would need to be positioned on the letter `s`:
+Given that code organization, the plugin will assist in navigating that puppet code. Given a simple puppet code snippet below:
 
 ```
 include some::class
 ```
 
-This plugin takes that idea a bit further by extracting all of the puppet resources in the file (except the built in resources like `file`, `package`, etc) and letting the user define various actions on them:
+the plugin will extract all of the puppet resources in the file (except the built in resources like `file`, `package`, etc) and let the user define various actions on them, namely:
 
 1. Going directly to the manifest file of a resource. This can be done by either selecting the target resource from an `fzf` driven selection list or extracting the resource from the current line.
 2. Going directly to the spec file of a resource.
