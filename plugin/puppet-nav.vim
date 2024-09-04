@@ -189,10 +189,10 @@ function! SearchPuppetCode(line=getline('.'))
   " The weird looking (?:::)? is non-capturing parens to group the
   " possible '::' preceding the type.
   let l:patterns = []
-  call add(l:patterns, '(?:^class|^define)\s+(?:::)?'.l:type.'[^:]')
+  call add(l:patterns, '(?:^class|^define)\s+(?:::)?'.l:type.'\s*$')
   call add(l:patterns, '^[^#]\s+class\s*\{\s*(["''])(?:::)?'.l:type.'\1')
   call add(l:patterns, '^[^#]\s+(?:::)?'.l:type.'\s*\{\s*.*:')
-  call add(l:patterns, '(include|contain)\s+(?:::)?'.l:type.'[^:]')
+  call add(l:patterns, '(include|contain)\s+(?:::)?'.l:type.'\s*$')
   call add(l:patterns, '^describe\s*(["''])(?:::)?'.l:type.'\2')
   let l:pattern = '(?:' . join(l:patterns, '|') . ')'
   call Debug(printf("The pattern is: %s", l:pattern))
