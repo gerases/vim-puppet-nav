@@ -196,7 +196,7 @@ function! SearchPuppetCode(line=getline('.'))
   call add(l:patterns, '^describe\s*(["''])(?:::)?'.l:type.'\2')
   let l:pattern = '(?:' . join(l:patterns, '|') . ')'
   call Debug(printf("The pattern is: %s", l:pattern))
-  call s:Call_With_Cd('RgPuppet', l:pattern, [printf("-g'!%s'", expand('%'))])
+  call s:Call_With_Cd('RgPuppet', l:pattern, printf("-g'!%s'", expand('%')))
 endfunction
 
 function! FzfSink(line)
