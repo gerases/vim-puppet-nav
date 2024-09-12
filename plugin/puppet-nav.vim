@@ -56,6 +56,19 @@ function! SelectResourcesFzf()
   call fzf#run(fzf#wrap(options))
 endfunction
 
+function! FindDefinitionLine()
+  " Get the line number on which the definition of the class/define begins
+  for line_num in range(1, line('$'))
+    let line = getline(line_num)
+    if matchstr(line, '\v\s*class|define') != ''
+      return line
+    endif
+  endfor
+
+  echo "Couldn't find the definition line in the manifest"
+  return
+endfunction
+
 function! GetResourceTitle(resource)
   " Given resource record, which consists of the resource type and title,
   " return the name of the define/class/include/contain/describe _or_
@@ -274,12 +287,14 @@ function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
     let l:res_title = SentenceCase(resource["title"])
   endif
 
-  if resource['type'] == 'class' || a:fully_qualify == 1
+  if l:resource['type'] == 'defined_type'
+    let l:script_args = l:res_title
+  elseif l:resource['type'] == 'class' || a:fully_qualify == 1
     " Always fully qualify classes with their titles or the output will
     " potentially contain hundreds of lines.
-    let l:script_args = join([res_type, l:res_title], ' ')
+    let l:script_args = join([l:res_type, l:res_title], ' ')
   else
-    let l:script_args = res_type
+    let l:script_args = l:res_type
   endif
 
   try
