@@ -56,6 +56,10 @@ function! SelectResourcesFzf()
   call fzf#run(fzf#wrap(options))
 endfunction
 
+function! QueryPuppetdbAgainstManifest()
+  call PuppetDbLookup(FindDefinitionLine())
+endfunction
+
 function! FindDefinitionLine()
   " Get the line number on which the definition of the class/define begins
   for line_num in range(1, line('$'))
