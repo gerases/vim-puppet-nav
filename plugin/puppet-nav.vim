@@ -297,14 +297,17 @@ function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
     " Always fully qualify classes with their titles or the output will
     " potentially contain hundreds of lines.
     let l:script_args = join([l:res_type, l:res_title], ' ')
+    let l:term_title = join([l:res_type, l:res_title], '%')
   else
     let l:script_args = l:res_type
+    let l:term_title = l:res_type
   endif
 
   try
     let l:script = printf('%s/puppetdb.sh', g:plugin_dir)
-    call Debug(printf("Executing: %s %s %s",  l:script, g:puppetdb_host, l:script_args))
-    exe printf("-tab term %s %s %s", l:script, g:puppetdb_host, l:script_args)
+    let l:cmd = printf("-tab call term_start('%s %s %s', {'term_name': '%s'})", l:script, g:puppetdb_host, l:script_args, l:term_title)
+    call Debug(printf("Executing: %s",  l:cmd))
+    exe l:cmd
   catch
     echoerr "An error occurred: " . v:exception
   endtry
@@ -352,3 +355,4 @@ function! RgPuppet(pattern, additional_opts=[])
 endfunction
 
 command! -nargs=1 Rgp call RgPuppet(<f-args>)
+nnoremap <Plug>(QueryPuppetdbAgainstManifest) :call QueryPuppetdbAgainstManifest()<cr>
