@@ -105,7 +105,7 @@ function! CollectResources()
     return sort(uniq(l:titles))
 endfunction
 
-function! ExtractResource(line=getline('.'))
+function! ExtractResource(line=getline('.'), core_resources=0)
   " Return either the name of a class or the name of a defined type
 
  " The rules below are:
@@ -124,7 +124,7 @@ function! ExtractResource(line=getline('.'))
         \ '^\(describe\)\s*[''"]\zs[^''"]\+\ze',
         \ ]
 
-  let l:ignore = [
+  let l:core_resources = [
         \ 'exec',
         \ 'file',
         \ 'group',
@@ -150,7 +150,7 @@ function! ExtractResource(line=getline('.'))
       " Examples of resource_type: 'class', 'include', 'contain', 'local::home'
       let l:resource_type = substitute(l:match[1], "^::", "", "")
       " Ignore built-in resources
-      if index(l:ignore, l:resource_type) != -1
+      if a:core_resources == 0 && index(l:core_resources, l:resource_type) != -1
         call Debug("Ignoring '".l:resource_type)
         continue
       end
@@ -276,7 +276,7 @@ function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
     throw "g:puppetdb_host is not set! Please set to http(s)://<HOST>:<PORT>"
   endif
 
-  let l:resource = ExtractResource(a:line)
+  let l:resource = ExtractResource(a:line, 1)
   if empty(l:resource)
     echo "Couldn't find a class or defined type on the current line."
     return
