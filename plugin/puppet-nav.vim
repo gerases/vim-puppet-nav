@@ -293,6 +293,7 @@ function! PuppetDbLookup(line=getline('.'), fully_qualify=1)
 
   if l:resource['type'] == 'defined_type'
     let l:script_args = l:res_title
+    let l:term_title = l:res_title
   elseif l:resource['type'] == 'class' || a:fully_qualify == 1
     " Always fully qualify classes with their titles or the output will
     " potentially contain hundreds of lines.
