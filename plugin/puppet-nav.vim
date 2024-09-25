@@ -352,7 +352,7 @@ function! RgPuppet(pattern, additional_opts=[])
   " Join the list into a single command string
   let l:cmd = join(l:cmd_list, ' ')
   call Debug("cmd:[start]".l:cmd."[end]")
-  call s:Call_With_Cd('fzf#vim#grep', l:cmd, fzf#vim#with_preview())
+  call fzf#vim#grep(l:cmd, fzf#vim#with_preview())
 endfunction
 
 command! -nargs=1 Rgp call RgPuppet(<f-args>)
