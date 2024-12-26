@@ -127,8 +127,9 @@ function! ExtractResource(line=getline('.'), core_resources=0)
   let l:core_resources = [
         \ 'exec',
         \ 'file',
+        \ 'file_line',
         \ 'group',
-        \ 'it',
+        \ 'mount',
         \ 'notify',
         \ 'package',
         \ 'schedule',
