@@ -341,14 +341,15 @@ function! RgPuppet(pattern, additional_opts=[])
         \ '--no-heading',
         \ '--color=always',
         \ '-g',
-        \ shellescape('*.pp', 1),
-        \ shellescape(a:pattern, 1),
+        \  shellescape('*.pp', 1),
         \ ]
 
   " Append additional options if provided
   if !empty(a:additional_opts)
-    call add(l:cmd_list, a:additional_opts)
+    call extend(l:cmd_list, a:additional_opts)
   endif
+
+  call add(l:cmd_list, shellescape(a:pattern, 1))
 
   " Join the list into a single command string
   let l:cmd = join(l:cmd_list, ' ')
@@ -357,4 +358,5 @@ function! RgPuppet(pattern, additional_opts=[])
 endfunction
 
 command! -nargs=1 Rgp call RgPuppet(<f-args>)
+command! -nargs=1 Rgpi call RgPuppet(<f-args>, ['--ignore-case'])
 nnoremap <Plug>(QueryPuppetdbAgainstManifest) :call QueryPuppetdbAgainstManifest()<cr>
