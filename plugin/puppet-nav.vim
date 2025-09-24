@@ -64,7 +64,7 @@ function! FindDefinitionLine()
   " Get the line number on which the definition of the class/define begins
   for line_num in range(1, line('$'))
     let line = getline(line_num)
-    if matchstr(line, '\v\s*class|define') != ''
+    if matchstr(line, '\v^\s*class|define') != ''
       return line
     endif
   endfor
