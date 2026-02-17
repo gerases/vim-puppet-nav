@@ -1,0 +1,208 @@
+*puppet-nav.txt*  Navigate Puppet codebases with fzf + ripgrep + PuppetDB
+
+==============================================================================
+CONTENTS
+								  *puppet-nav*
+							      *puppet-nav-toc*
+
+    Introduction .......................................... |puppet-nav-intro|
+    Requirements ........................................... |puppet-nav-reqs|
+    Installation ........................................ |puppet-nav-install|
+    Configuration ........................................ |puppet-nav-config|
+    Functions ......................................... |puppet-nav-functions|
+    Commands ........................................... |puppet-nav-commands|
+    PuppetDB integration ............................... |puppet-nav-puppetdb|
+    Example mappings ................................... |puppet-nav-mappings|
+    Tips & troubleshooting ................................. |puppet-nav-tips|
+
+==============================================================================
+INTRODUCTION
+							    *puppet-nav-intro*
+
+puppet-nav is a Vim plugin meant for navigating a large Puppet codebase that
+follows a conventional layout rooted at |g:puppet_nav_proj_path|.
+
+Expected-ish project structure (simplified): >
+
+	.
+	├── manifests
+	├── modules
+	│   ├── some-forge-module
+	│   ├── your-custom-mod
+	...
+<
+
+Given a Puppet manifest snippet like: >puppet
+
+    include some::class
+<
+…the plugin can extract Puppet resources in the current file (excluding built-in
+resources like file/package/etc.) and offers actions such as:
+
+    * Jump to a resource’s manifest
+    * Jump to a resource’s spec
+    * Grep the codebase for a resource
+    * Jump from a spec back to the resource manifest
+
+It also adds a ripgrep+fzf-inspired command, `:Rgp`, which greps only Puppet
+manifests.
+
+==============================================================================
+REQUIREMENTS
+							     *puppet-nav-reqs*
+
+Core dependencies:
+    * |fzf| ( https://github.com/junegunn/fzf )
+    * fzf.vim ( https://github.com/junegunn/fzf.vim )
+    * ripgrep ( https://github.com/BurntSushi/ripgrep )
+    * Vim >= 8.1 (needs `:terminal`)
+    * (for PuppetDB integration) curl, jq, column
+
+If you enable PuppetDB lookups, the plugin uses curl + jq to query and format
+results.
+
+==============================================================================
+INSTALLATION
+							  *puppet-nav-install*
+
+Install using your preferred plugin manager, or drop the plugin file somewhere
+Vim sources (e.g. ~/.vim/plugin).
+
+------------------------------------------------------------------------------
+CONFIGURATION
+							   *puppet-nav-config*
+
+The plugin is controlled by these variables:
+
+                                                      *g:puppet_nav_proj_path*
+'g:puppet_nav_proj_path'    (string) Path to the Puppet codebase root.
+                          MUST BE SET.
+
+                                                             *g:puppetdb_host*
+'g:puppetdb_host'            (string) PuppetDB host+port, e.g.
+                          http(s)://<DBHOST>:<DBPORT>
+                          Used for PuppetDB integration.
+
+                                                          *g:puppet_nav_debug*
+'g:puppet_nav_debug'         (number/bool) Enable debug output.
+
+
+Example: >vim
+
+	let g:puppet_nav_proj_path = '/srv/puppet'
+
+	"" Optional PuppetDB:
+	let g:puppetdb_host = 'https://puppetdb.example.com:8081'
+	let g:puppet_nav_debug = 0
+<
+
+==============================================================================
+FUNCTIONS
+							*puppet-nav-functions*
+
+These functions are exposed so you can map them however you like:
+
+                                                        *GoToPuppetManifest()*
+`GoToPuppetManifest()`
+  Go to the Puppet manifest of the resource on the current line.
+
+                                                        *SelectResourcesFzf()*
+`SelectResourcesFzf()`
+  Pick a resource from an |fzf| list and jump to its manifest.
+
+                                                          *SearchPuppetCode()*
+`SearchPuppetCode()`
+  Search Puppet manifests for the resource on the current line and present
+  results via |fzf|. Excludes the current file.
+
+						   *PuppetDbTypeTitleLookup()*
+`PuppetDbTypeTitleLookup()`
+  PuppetDB integration: query by type + title when applicable.
+
+                                                        *PuppetDbTypeLookup()*
+`PuppetDbTypeLookup()`
+  PuppetDB integration: query by type (or title — see |puppet-nav-type| ).
+
+==============================================================================
+COMMANDS
+							 *puppet-nav-commands*
+									*:Rgp*
+`:Rgp`
+  Grep Puppet manifests using ripgrep and present results via fzf.
+
+Note: Conceptually this is inspired by the |fzf.vim| `:Rg` command, but scoped
+to Puppet manifests.
+
+==============================================================================
+PUPPETDB INTEGRATION
+							 *puppet-nav-puppetdb*
+To enable PuppetDB lookups you must set |g:puppetdb_host| to: >
+  http(s)://<DBHOST>:<DBPORT>
+<
+Then put your cursor on a line containing a Puppet resource and call either:
+  * |PuppetDbTypeTitleLookup()|
+  * |PuppetDbTypeLookup()|
+
+The plugin opens a new tab with a list of hosts using that resource.
+
+Type vs type+title behavior:~
+							     *puppet-nav-type*
+
+Defined types example: >puppet
+
+    some::defined::type { 'instance':; }
+<
+  PuppetDbTypeTitleLookup() queries by: >
+    type = "some::defined::type" AND title = "instance"
+<
+  PuppetDbTypeLookup() queries by: >
+    type = "some::defined::type" (only)
+<
+Class-like example: >
+
+    some::class { 'class-name':; }
+<
+In these cases both functions effectively use both the type and title, to
+avoid huge result sets / unnecessary PuppetDB load.
+
+Note: PuppetDB integration depends on `curl` and `jq` (and also `column`).
+
+==============================================================================
+SUGGESTED MAPPINGS
+							 *puppet-nav-mappings*
+
+
+<Leader>L	Calls |PuppetDbTypeTitleLookup()|
+
+<Leader>l	Calls |PuppetDbTypeLookup()|
+
+More example mappings (common patterns): >vim
+
+    "" Jump to manifest for resource under cursor/line
+    nnoremap <silent> <Leader>pm :call GoToPuppetManifest()<CR>
+
+    "" Pick a resource from fzf, then jump
+    nnoremap <silent> <Leader>ps :call SelectResourcesFzf()<CR>
+
+    "" Search for usages of resource under cursor/line
+    nnoremap <silent> <Leader>pg :call SearchPuppetCode()<CR>
+<
+==============================================================================
+TIPS & TROUBLESHOOTING
+							     *puppet-nav-tips*
+
+* “Nothing works” checklist:
+    * Is |g:puppet_nav_proj_path| set to your Puppet repo root? It’s required.
+    * Do you have fzf + fzf.vim + ripgrep installed?
+    * Are you on Vim 8.1+ (needs :terminal)?
+
+* PuppetDB queries return errors / empty output:
+    * Confirm |g:puppetdb_host| is set to the correct scheme/host/port format.
+    * Ensure curl/jq/column exist in $PATH.
+
+* Performance vibes:
+    * The plugin intentionally uses type+title in some cases to reduce
+      PuppetDB load and avoid enormous result sets.
+    * For code search, ripgrep is doing the heavy lifting; keep your ignores sane.
+
+    vim:tw=78:ts=8:noet:ft=help:norl:
