@@ -115,6 +115,7 @@ function! ExtractResource(line=getline('.'), core_resources=0)
  " 3. e.g. some::define { 'instance': }.
  " 4. an include/contain statement
  " 5. a describe statement in a spec file
+ " 6. a resource reference, e.g. Class['some::class'] or -> Class['some::class']
 
   let l:patterns = [
         \ '^\(class\|define\)\s\+\zs[^ ({]\+',
@@ -122,6 +123,7 @@ function! ExtractResource(line=getline('.'), core_resources=0)
         \ '^[^#]\s*\([a-zA-Z0-9_:]\+\)\s*{\s*[''"]\?\zs[^''":]\+\ze[''"]\?:',
         \ '^[^#]\s*\(include\|contain\)\s\+[''"]\?\zs[a-zA-Z0-9_:]\+\ze[''"]\?',
         \ '^\(describe\)\s*[''"]\zs[^''"]\+\ze',
+        \ '^[^#]\?\s*\%(->\|\~>\)\?\s*\(Class\)\[[''"]\zs[^''"]\+\ze[''"]\]',
         \ ]
 
   let l:core_resources = [
@@ -157,7 +159,7 @@ function! ExtractResource(line=getline('.'), core_resources=0)
       end
       call Debug(printf("Matched %s with pattern %s", l:resource_type, l:pattern))
       let l:result = {'title': l:resource_instance}
-      if index(['class', 'include', 'contain', 'describe'], l:resource_type) != -1
+      if index(['class', 'include', 'contain', 'describe'], tolower(l:resource_type)) != -1
         let l:result['type'] = 'class'
       elseif l:resource_type == 'define'
         let l:result['type'] = 'defined_type'

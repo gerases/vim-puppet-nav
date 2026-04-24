@@ -23,6 +23,10 @@ Execute (Ensure some::entity is found in each case):
         \ [14, " contain   'some::class'  "],
         \ [15, " include 'some::class'"],
         \ [16, ' include "some::class"'],
+        \ [17, "  Class['some::class']"],
+        \ [18, "  -> Class['some::class']"],
+        \ [19, "  ~> Class['some::class']"],
+        \ [20, '  Class["some::class"]'],
         \]
     let idx = tst_case[0]
     let line = tst_case[1]
