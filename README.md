@@ -25,8 +25,10 @@ the plugin will extract all of the puppet resources in the file (except the buil
 2. Going directly to the spec file of a resource.
 3. Grepping the code base for a resource
 4. Going from the spec file to the manifest of the resource.
+5. Looking up Hiera data for a `lookup()`/`hiera()` key on the current line.
+6. Looking up Hiera data for a class parameter's auto-bound key.
 
-In addition, the original `Rg` command from the [fzf.vim](https://github.com/junegunn/fzf.vim) plugin was used as the inspiration for a variant called `Rgp` to grep only the puppet manifests.
+In addition, the original `Rg` command from the [fzf.vim](https://github.com/junegunn/fzf.vim) plugin was used as the inspiration for variants called `Rgp` (puppet manifests) and `Rgh` (Hiera data) to grep scoped file types.
 
 # Install
 Install using [vim-plug](https://github.com/junegunn/vim-plug) or another vim plugin system. If you don't have a plugin system, put the file in a location that is sourced by Vim such as `~/.vim/plugin`.
@@ -53,12 +55,17 @@ The following functions are exposed for the bindings of your choice:
 | `PuppetDbTypeTitleLookup()` | See [PuppetDB Integration](#puppetdb-integration).|
 | `PuppetDbTypeLookup()` | See [PuppetDB Integration](#puppetdb-integration).|
 | `SearchPuppetCode()` | Search the puppet manifests for the resource on the current line and present the results in an FZF dialog. The result will exclude the current file. The idea is to search for the use of the resource in other manifests.|
+| `HieraLookup()` | Extract the Hiera key from a `lookup()`/`hiera()` call on the current line and grep the `hiera/` directory for it |
+| `HieraLookupParam()` | Infer the Hiera auto-binding key from a class parameter on the current line (class name + param name) and grep the `hiera/` directory for it |
 
 The following commands are defined:
 
 | Command | Purpose |
 | ------------- | ------------- |
 | `Rgp` | Grep the puppet manifests presenting the results using an FZF dialog |
+| `Rgpi` | Case-insensitive variant of `Rgp` |
+| `Rgh` | Grep the Hiera data files (*.yaml, *.eyaml) presenting the results using an FZF dialog |
+| `Rghi` | Case-insensitive variant of `Rgh` |
 
 # PuppetDB Integration
 

@@ -43,9 +43,10 @@ resources like file/package/etc.) and offers actions such as:
     * Jump to a resource’s spec
     * Grep the codebase for a resource
     * Jump from a spec back to the resource manifest
+    * Look up Hiera data for a lookup()/hiera() key or class parameter
 
-It also adds a ripgrep+fzf-inspired command, `:Rgp`, which greps only Puppet
-manifests.
+It also adds ripgrep+fzf-inspired commands: `:Rgp` for Puppet manifests
+and `:Rgh` for Hiera data files.
 
 ==============================================================================
 REQUIREMENTS
@@ -123,15 +124,53 @@ These functions are exposed so you can map them however you like:
 `PuppetDbTypeLookup()`
   PuppetDB integration: query by type (or title — see |puppet-nav-type| ).
 
+							      *HieraLookup()*
+`HieraLookup()`
+  Extract the Hiera key from a lookup()/hiera()/hiera_hash()/hiera_array()
+  call on the current line and search the hiera/ directory for all YAML/eyaml
+  files that set it. Results are shown via |fzf| with preview.
+
+  Example: with cursor on >puppet
+    $val = lookup('cnvr_rsyslog::syslog_server')
+<
+  …the plugin greps hiera/ for `cnvr_rsyslog::syslog_server`.
+
+                                                        *HieraLookupParam()*
+`HieraLookupParam()`
+  Infer the Hiera auto-binding key from a class parameter declaration on the
+  current line. Combines the class/define name (from the file's declaration)
+  with the parameter name and searches hiera/ for it.
+
+  Example: in a file containing >puppet
+    class profile::web (
+      String $port = '8080',
+    ) {
+<
+  …with cursor on the `$port` line, the plugin greps hiera/ for
+  `profile::web::port`.
+
 ==============================================================================
 COMMANDS
 							 *puppet-nav-commands*
 									*:Rgp*
 `:Rgp`
-  Grep Puppet manifests using ripgrep and present results via fzf.
+  Grep Puppet manifests (*.pp) using ripgrep and present results via fzf.
 
-Note: Conceptually this is inspired by the |fzf.vim| `:Rg` command, but scoped
-to Puppet manifests.
+								*:Rgpi*
+`:Rgpi`
+  Case-insensitive variant of |:Rgp|.
+
+								*:Rgh*
+`:Rgh`
+  Grep Hiera data files (*.yaml, *.eyaml) under hiera/ using ripgrep and
+  present results via fzf.
+
+								*:Rghi*
+`:Rghi`
+  Case-insensitive variant of |:Rgh|.
+
+Note: These are inspired by the |fzf.vim| `:Rg` command, scoped to specific
+file types.
 
 ==============================================================================
 PUPPETDB INTEGRATION
@@ -186,6 +225,12 @@ More example mappings (common patterns): >vim
 
     "" Search for usages of resource under cursor/line
     nnoremap <silent> <Leader>pg :call SearchPuppetCode()<CR>
+
+    "" Hiera: look up the key from a lookup()/hiera() call
+    nnoremap <silent> <Leader>hl :call HieraLookup()<CR>
+
+    "" Hiera: look up the auto-bound key for a class parameter
+    nnoremap <silent> <Leader>hp :call HieraLookupParam()<CR>
 <
 ==============================================================================
 TIPS & TROUBLESHOOTING
