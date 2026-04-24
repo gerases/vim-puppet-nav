@@ -375,7 +375,7 @@ function! ExtractHieraKey(line)
   return ''
 endfunction
 
-function! RgHiera(pattern, additional_opts=[])
+function! RgHiera(pattern, path='hiera/', additional_opts=[])
   let l:cmd_list = [
         \ 'rg',
         \ '--pcre2',
@@ -394,6 +394,7 @@ function! RgHiera(pattern, additional_opts=[])
   endif
 
   call add(l:cmd_list, shellescape(a:pattern, 1))
+  call add(l:cmd_list, a:path)
 
   let l:cmd = join(l:cmd_list, ' ')
   call Debug("hiera cmd:[start]".l:cmd."[end]")
@@ -432,7 +433,7 @@ function! HieraLookupParam(line=getline('.'))
   let l:key = l:class_name . '::' . l:param
   call Debug("Hiera param key: " . l:key)
   let l:pattern = '^\s*' . l:key . '[: ]'
-  call s:Call_With_Cd('RgHiera', l:pattern, ['hiera/'])
+  call s:Call_With_Cd('RgHiera', l:pattern)
 endfunction
 
 function! HieraLookup(line=getline('.'))
@@ -444,11 +445,11 @@ function! HieraLookup(line=getline('.'))
 
   call Debug("Hiera key: " . l:key)
   let l:pattern = '^\s*' . l:key . '[: ]'
-  call s:Call_With_Cd('RgHiera', l:pattern, ['hiera/'])
+  call s:Call_With_Cd('RgHiera', l:pattern)
 endfunction
 
 command! -nargs=1 Rgp call RgPuppet(<f-args>)
 command! -nargs=1 Rgpi call RgPuppet(<f-args>, ['--ignore-case'])
-command! -nargs=1 Rgh call s:Call_With_Cd('RgHiera', <f-args>, ['hiera/'])
-command! -nargs=1 Rghi call s:Call_With_Cd('RgHiera', <f-args>, ['hiera/', '--ignore-case'])
+command! -nargs=1 Rgh call s:Call_With_Cd('RgHiera', <f-args>)
+command! -nargs=1 Rghi call s:Call_With_Cd('RgHiera', <f-args>, 'hiera/', ['--ignore-case'])
 nnoremap <Plug>(QueryPuppetdbAgainstManifest) :call QueryPuppetdbAgainstManifest()<cr>
