@@ -359,6 +359,61 @@ function! RgPuppet(pattern, additional_opts=[])
   call fzf#vim#grep(l:cmd, fzf#vim#with_preview())
 endfunction
 
+function! ExtractHieraKey(line)
+  let l:patterns = [
+        \ '\vlookup\(\s*[''"]([^''"]+)[''"]',
+        \ '\vhiera(_hash|_array)?\(\s*[''"]([^''"]+)[''"]',
+        \ ]
+  for l:pat in l:patterns
+    let l:match = matchlist(a:line, l:pat)
+    if l:match != []
+      " lookup() key is in group 1, hiera*() key is in group 2
+      let l:key = !empty(l:match[2]) ? l:match[2] : l:match[1]
+      return l:key
+    endif
+  endfor
+  return ''
+endfunction
+
+function! RgHiera(pattern, additional_opts=[])
+  let l:cmd_list = [
+        \ 'rg',
+        \ '--pcre2',
+        \ '--column',
+        \ '--line-number',
+        \ '--no-heading',
+        \ '--color=always',
+        \ '-g',
+        \  shellescape('*.yaml', 1),
+        \ '-g',
+        \  shellescape('*.eyaml', 1),
+        \ ]
+
+  if !empty(a:additional_opts)
+    call extend(l:cmd_list, a:additional_opts)
+  endif
+
+  call add(l:cmd_list, shellescape(a:pattern, 1))
+
+  let l:cmd = join(l:cmd_list, ' ')
+  call Debug("hiera cmd:[start]".l:cmd."[end]")
+  call fzf#vim#grep(l:cmd, fzf#vim#with_preview())
+endfunction
+
+function! HieraLookup(line=getline('.'))
+  let l:key = ExtractHieraKey(a:line)
+  if empty(l:key)
+    echo "No lookup()/hiera() call found on this line"
+    return
+  endif
+
+  call Debug("Hiera key: " . l:key)
+  let l:pattern = '^\s*' . l:key . '[: ]'
+  call s:Call_With_Cd('RgHiera', l:pattern, ['hiera/'])
+endfunction
+
 command! -nargs=1 Rgp call RgPuppet(<f-args>)
 command! -nargs=1 Rgpi call RgPuppet(<f-args>, ['--ignore-case'])
+command! -nargs=1 Rgh call s:Call_With_Cd('RgHiera', <f-args>, ['hiera/'])
+command! -nargs=1 Rghi call s:Call_With_Cd('RgHiera', <f-args>, ['hiera/', '--ignore-case'])
 nnoremap <Plug>(QueryPuppetdbAgainstManifest) :call QueryPuppetdbAgainstManifest()<cr>

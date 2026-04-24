@@ -81,3 +81,21 @@ Execute (Test IsDefinedTypeInstance):
   let expect = tst_case[2]
   let result = IsDefinedTypeInstance(resource)
   AssertEqual expect, result
+
+Execute (Test ExtractHieraKey):
+  for tst_case in [
+        \ [1 , "  $syslog_server = lookup('cnvr_rsyslog::syslog_server')", 'cnvr_rsyslog::syslog_server'],
+        \ [2 , '  $data = lookup("metricbeat::modules", undef, ''unique'', undef)', 'metricbeat::modules'],
+        \ [3 , "  $files_real = hiera_hash('swap_file::files', {})", 'swap_file::files'],
+        \ [4 , "  $templates = hiera_array('metricbeat::module_templates', [])", 'metricbeat::module_templates'],
+        \ [5 , "  $val = hiera('some::key')", 'some::key'],
+        \ [6 , "  $cron_job = lookup('cron::job', Optional[Hash], $merge, {})", 'cron::job'],
+        \ [7 , "  include some::class", ''],
+        \ [8 , "  # This is a comment with lookup() in it", ''],
+        \]
+    let idx = tst_case[0]
+    let line = tst_case[1]
+    let expect = tst_case[2]
+    let result = ExtractHieraKey(line)
+    AssertEqual expect, result, 'Case ' . idx . ' failed'
+  endfor
