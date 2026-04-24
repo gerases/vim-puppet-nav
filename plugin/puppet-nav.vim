@@ -1,6 +1,6 @@
 let g:plugin_dir = expand('<sfile>:p:h')
 
-function ShellEscape(str)
+function! ShellEscape(str)
   return system('printf %q ' . a:str)
 endfunction
 
@@ -120,7 +120,7 @@ function! ExtractResource(line=getline('.'), core_resources=0)
         \ '^\(class\|define\)\s\+\zs[^ ({]\+',
         \ '^[^#]\s*\(class\)\s*{\s*[''"]\zs[^''"]\+\ze',
         \ '^[^#]\s*\([a-zA-Z0-9_:]\+\)\s*{\s*[''"]\?\zs[^''":]\+\ze[''"]\?:',
-        \ '^[^#]\s*\(include\|contain\)\s\+\zs[a-zA-Z0-9_:]\+',
+        \ '^[^#]\s*\(include\|contain\)\s\+[''"]\?\zs[a-zA-Z0-9_:]\+\ze[''"]\?',
         \ '^\(describe\)\s*[''"]\zs[^''"]\+\ze',
         \ ]
 
@@ -223,8 +223,8 @@ function! FzfSink(line)
 endfunction
 
 function! GoToPuppetManifest(line=getline('.'), extract=1)
+  let l:title = ''
   if a:extract == 0
-    " Meaning 'line' contains the extracted resource name already
     let l:title = a:line
   else
     let l:resource = ExtractResource(a:line)

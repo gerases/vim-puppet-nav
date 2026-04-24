@@ -1,6 +1,7 @@
 Before:
   exe 'messages clear'
-  exe 'cd ' . expand('~/.vim/plugged/vim-puppet-nav')
+  let g:test_plugin_dir = fnamemodify(g:vader_file, ':p:h:h')
+  exe 'cd ' . g:test_plugin_dir
   exe 'source ' . expand('plugin/puppet-nav.vim')
   exe 'cd ' . expand('~/proj/puppet')
 
@@ -18,6 +19,10 @@ Execute (Ensure some::entity is found in each case):
         \ [10, " include    some::class   "],
         \ [11, " contain some::class"],
         \ [12, " contain      some::class    "],
+        \ [13, " contain 'some::class'"],
+        \ [14, " contain   'some::class'  "],
+        \ [15, " include 'some::class'"],
+        \ [16, ' include "some::class"'],
         \]
     let idx = tst_case[0]
     let line = tst_case[1]
