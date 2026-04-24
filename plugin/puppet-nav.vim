@@ -229,7 +229,7 @@ function! GoToPuppetManifest(line=getline('.'), extract=1)
   else
     let l:resource = ExtractResource(a:line)
     if !empty(l:resource)
-      let l:title = resource["title"]
+      let l:title = GetResourceTitle(resource)
     endif
   end
 
