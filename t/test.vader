@@ -82,6 +82,23 @@ Execute (Test IsDefinedTypeInstance):
   let result = IsDefinedTypeInstance(resource)
   AssertEqual expect, result
 
+Execute (Test ExtractParamName):
+  for tst_case in [
+        \ [1 , "  String $ollama_ver,", 'ollama_ver'],
+        \ [2 , "  Boolean $dockerize_jupyterhub = false,", 'dockerize_jupyterhub'],
+        \ [3 , "  Optional[Enum['dev', 'prod']] $prefect_maturity = undef,", 'prefect_maturity'],
+        \ [4 , "  Array[String] $http_ssl_ca_list = [],", 'http_ssl_ca_list'],
+        \ [5 , "  Optional[Integer[8,64]] $swap_size = undef,", 'swap_size'],
+        \ [6 , "  include some::class", ''],
+        \ [7 , "  # just a comment", ''],
+        \]
+    let idx = tst_case[0]
+    let line = tst_case[1]
+    let expect = tst_case[2]
+    let result = ExtractParamName(line)
+    AssertEqual expect, result, 'Case ' . idx . ' failed'
+  endfor
+
 Execute (Test ExtractHieraKey):
   for tst_case in [
         \ [1 , "  $syslog_server = lookup('cnvr_rsyslog::syslog_server')", 'cnvr_rsyslog::syslog_server'],

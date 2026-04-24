@@ -400,6 +400,41 @@ function! RgHiera(pattern, additional_opts=[])
   call fzf#vim#grep(l:cmd, fzf#vim#with_preview())
 endfunction
 
+function! ExtractParamName(line)
+  let l:match = matchstr(a:line, '\$\zs\w\+')
+  return l:match
+endfunction
+
+function! ExtractClassName()
+  for line_num in range(1, line('$'))
+    let line = getline(line_num)
+    let l:name = matchstr(line, '^\(class\|define\)\s\+\zs[^ ({]\+')
+    if !empty(l:name)
+      return l:name
+    endif
+  endfor
+  return ''
+endfunction
+
+function! HieraLookupParam(line=getline('.'))
+  let l:param = ExtractParamName(a:line)
+  if empty(l:param)
+    echo "No parameter found on this line"
+    return
+  endif
+
+  let l:class_name = ExtractClassName()
+  if empty(l:class_name)
+    echo "Could not find class/define declaration in this file"
+    return
+  endif
+
+  let l:key = l:class_name . '::' . l:param
+  call Debug("Hiera param key: " . l:key)
+  let l:pattern = '^\s*' . l:key . '[: ]'
+  call s:Call_With_Cd('RgHiera', l:pattern, ['hiera/'])
+endfunction
+
 function! HieraLookup(line=getline('.'))
   let l:key = ExtractHieraKey(a:line)
   if empty(l:key)
