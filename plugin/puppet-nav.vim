@@ -10,24 +10,11 @@ function! Debug(message)
   endif
 endfunction
 
-function! s:Call_With_Cd(func, ...)
+function! s:ProjPath()
   if !exists('g:puppet_nav_proj_path')
     throw "The g:puppet_nav_proj_path variable is not set. See https://github.com/gerases/vim-puppet-nav?tab=readme-ov-file#use"
   endif
-
-  let l:cur_dir = getcwd()
-  call s:chdir(g:puppet_nav_proj_path)
-  let l:result = call(a:func, a:000)
-  call s:chdir(l:cur_dir)
-  return l:result
-endfunction
-
-function! s:chdir(path)
-  try
-    exe printf('lcd %s', a:path)
-  catch
-    echoerr printf("An error occurred: %s", v:exception)
-  endtry
+  return g:puppet_nav_proj_path
 endfunction
 
 function! SelectResourcesFzf()
@@ -216,7 +203,10 @@ function! SearchPuppetCode(line=getline('.'))
   call add(l:patterns, '^describe\s*(["''])(?:::)?'.l:type.'\2')
   let l:pattern = '(?:' . join(l:patterns, '|') . ')'
   call Debug(printf("The pattern is: %s", l:pattern))
-  call s:Call_With_Cd('RgPuppet', l:pattern, [printf("-g'!%s'", expand('%'))])
+  let l:proj = s:ProjPath()
+  let l:abs_file = fnamemodify(expand('%'), ':p')
+  let l:rel_file = substitute(l:abs_file, '^' . escape(l:proj, '\.') . '/', '', '')
+  call RgPuppet(l:pattern, [printf("-g'!%s'", l:rel_file)], l:proj)
 endfunction
 
 function! FzfSink(line)
@@ -251,12 +241,10 @@ function! GoToPuppetManifest(line=getline('.'), extract=1)
     let manifest_path = substitute(module_path, '\v^([^/]+)', '\1/manifests', '')
   endif
 
-  " Add the ".pp" extension to form the manifest path
-  let manifest_file = s:Call_With_Cd('findfile', manifest_path . '.pp', 'modules/;')
+  let manifest_file = findfile(manifest_path . '.pp', s:ProjPath() . '/modules/')
 
-  " If the manifest is found, open it in a new tab
   if !empty(manifest_file)
-      call s:Call_With_Cd('execute', printf('-tabedit %s', manifest_file))
+      exe printf('-tabedit %s', manifest_file)
   else
       echo printf("Manifest not found: %s.pp", manifest_path)
   endif
@@ -333,8 +321,10 @@ function! PuppetDbTypeLookup(line=getline('.'))
 endfunction
 
 
-function! RgPuppet(pattern, additional_opts=[])
-  " Given a pattern, find all its matches in all puppet manifests
+function! RgPuppet(pattern, additional_opts=[], path='')
+  " Given a pattern, find all its matches in all puppet manifests.
+  " When path is non-empty, rg searches that directory; otherwise it
+  " searches from cwd.
   let l:cmd_list = [
         \ 'rg',
         \ '--pcre2',
@@ -346,14 +336,16 @@ function! RgPuppet(pattern, additional_opts=[])
         \  shellescape('*.pp', 1),
         \ ]
 
-  " Append additional options if provided
   if !empty(a:additional_opts)
     call extend(l:cmd_list, a:additional_opts)
   endif
 
   call add(l:cmd_list, shellescape(a:pattern, 1))
 
-  " Join the list into a single command string
+  if !empty(a:path)
+    call add(l:cmd_list, a:path)
+  endif
+
   let l:cmd = join(l:cmd_list, ' ')
   call Debug("cmd:[start]".l:cmd."[end]")
   call fzf#vim#grep(l:cmd, fzf#vim#with_preview())
@@ -394,7 +386,7 @@ function! RgHiera(pattern, path='hiera/', additional_opts=[])
   endif
 
   call add(l:cmd_list, shellescape(a:pattern, 1))
-  call add(l:cmd_list, a:path)
+  call add(l:cmd_list, s:ProjPath() . '/' . a:path)
 
   let l:cmd = join(l:cmd_list, ' ')
   call Debug("hiera cmd:[start]".l:cmd."[end]")
@@ -433,7 +425,7 @@ function! HieraLookupParam(line=getline('.'))
   let l:key = l:class_name . '::' . l:param
   call Debug("Hiera param key: " . l:key)
   let l:pattern = '^\s*' . l:key . '[: ]'
-  call s:Call_With_Cd('RgHiera', l:pattern)
+  call RgHiera(l:pattern)
 endfunction
 
 function! HieraLookup(line=getline('.'))
@@ -445,11 +437,11 @@ function! HieraLookup(line=getline('.'))
 
   call Debug("Hiera key: " . l:key)
   let l:pattern = '^\s*' . l:key . '[: ]'
-  call s:Call_With_Cd('RgHiera', l:pattern)
+  call RgHiera(l:pattern)
 endfunction
 
 command! -nargs=1 Rgp call RgPuppet(<f-args>)
 command! -nargs=1 Rgpi call RgPuppet(<f-args>, ['--ignore-case'])
-command! -nargs=1 Rgh call s:Call_With_Cd('RgHiera', <f-args>)
-command! -nargs=1 Rghi call s:Call_With_Cd('RgHiera', <f-args>, 'hiera/', ['--ignore-case'])
+command! -nargs=1 Rgh call RgHiera(<f-args>)
+command! -nargs=1 Rghi call RgHiera(<f-args>, 'hiera/', ['--ignore-case'])
 nnoremap <Plug>(QueryPuppetdbAgainstManifest) :call QueryPuppetdbAgainstManifest()<cr>
